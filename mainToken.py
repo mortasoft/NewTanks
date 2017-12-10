@@ -7,24 +7,28 @@ from flask_dance.contrib.twitter import make_twitter_blueprint, twitter
 from werkzeug.utils import redirect
 
 app = Flask(__name__)
-numTanks = 0;
+numTanks = 0
 tanques = []
 username = 'user'
 password = '123'
 app.config['SECRET_KEY'] = 'ulacit'
 
-def requiere_auth(funcion):
+def requiere_token(funcion):
     @wraps(funcion)
-    def validar(*args, **kwargs):
-        global username
-        global password
-        auth = request.authorization
-        if auth and auth.username == username and auth.password == password:
-            return funcion(*args, **kwargs)
+    def validar_token(*args, **kwargs):
+        token = request.args.get('token') #http://127.0.0.1:5000/route?token=alshfjfjdklsfj89549834ur
 
-        return make_response('Usuario o password incorrecto! <a href="/Login"> Iniciar sesión</a>', 401, {'WWW-Authenticate': 'Basic realm="Login Required"'})
+        if not token:
+            return jsonify({'message' : 'Se requiere un Token!'}), 403
 
-    return validar
+        try:
+            data = jwt.decode(token, app.config['SECRET_KEY'])
+        except:
+            return jsonify({'message' : 'Token invalido'}), 403
+
+        return funcion(*args, **kwargs)
+
+    return validar_token
 
 class Tank:
     def __init__(self,nombre,x,y,direccion):
@@ -42,25 +46,37 @@ class Tank:
                 'direccion': self.direccion
                 }
 
+
 @app.route("/Tanks")
-@requiere_auth
 def game():
-    return render_template('Tank.html')
+    return render_template('TankToken.html')
 
 @app.route("/")
 def redic():
     return redirect('/Login')
 
+@app.route("/TanksToken")
+@requiere_token
+def tanksToken():
+    return render_template('TankToken.html')
 
 @app.route("/Login")
 def login():
     return render_template('Login.html')
 
-@app.route("/LoginHTTP")
-@requiere_auth
-def http():
-    return render_template('Tank.html')
+@app.route("/LoginToken")
+def token():
+    global username
+    global password
+    auth = request.authorization
 
+    if auth and auth.password == password and auth.username == username:
+        token = jwt.encode({'user': auth.username, 'exp': datetime.datetime.utcnow() + datetime.timedelta(minutes=60)},
+                           app.config['SECRET_KEY'])
+
+        return redirect('/TanksToken'+"?token="+token.decode('UTF-8'))
+
+    return make_response('Could not verify!', 401, {'WWW-Authenticate': 'Basic realm="Login Required"'})
 
 
 @app.route("/Logout")
@@ -77,7 +93,6 @@ def info():
 
 
 @app.route("/crearTanque")
-@requiere_auth
 def crearNuevoTanque():
     global numTanks
     randX = randint(30, 770)
@@ -101,7 +116,6 @@ def direccion():
 
 
 @app.route('/brain', methods=['GET'])
-@requiere_auth
 def brain():
 
     for tanque in tanques:
@@ -154,7 +168,6 @@ def disparoAleatorio(tank):
     return jsonify(tanque=tank,disparo=num_aleatorio)
 
 @app.route('/actualizaVida', methods=['GET'])
-@requiere_auth
 def vida():
     if request.method == 'GET':
         nombreTanque = request.args.get('tank')
@@ -167,4 +180,4 @@ def vida():
 
 
 if __name__ == '__main__':
-    app.run('0.0.0.0',debug=True)
+    app.run('0.0.0.0',5001,debug=True)

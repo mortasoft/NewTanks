@@ -7,24 +7,29 @@ from flask_dance.contrib.twitter import make_twitter_blueprint, twitter
 from werkzeug.utils import redirect
 
 app = Flask(__name__)
-numTanks = 0;
+numTanks = 0
 tanques = []
-username = 'user'
-password = '123'
 app.config['SECRET_KEY'] = 'ulacit'
+twitter_blueprint = make_twitter_blueprint(api_key='Zy17N4uIK4pjExwyd3Fzo1vxz',
+                                           api_secret='7H6KeCRYDwSjnhCuZBWI76aq4jdYp8pD10eTqmDX2JVWw6vByb')
 
-def requiere_auth(funcion):
-    @wraps(funcion)
-    def validar(*args, **kwargs):
-        global username
-        global password
-        auth = request.authorization
-        if auth and auth.username == username and auth.password == password:
-            return funcion(*args, **kwargs)
+app.register_blueprint(twitter_blueprint, url_prefix='/twitter_login')
 
-        return make_response('Usuario o password incorrecto! <a href="/Login"> Iniciar sesión</a>', 401, {'WWW-Authenticate': 'Basic realm="Login Required"'})
+@app.route('/twitter')
+def twitter_login():
 
-    return validar
+    if not twitter.authorized:
+        return redirect(url_for('twitter.login'))
+    account_info = twitter.get('account/settings.json')
+
+    if account_info.ok:
+        account_info_json = account_info.json()
+    
+        return render_template('TankOauth.html')
+        #return '<h1>Your Twitter name is @{}'.format(account_info_json['screen_name'])
+
+    return '<h1>Request failed!</h1>'
+
 
 class Tank:
     def __init__(self,nombre,x,y,direccion):
@@ -42,25 +47,22 @@ class Tank:
                 'direccion': self.direccion
                 }
 
+
 @app.route("/Tanks")
-@requiere_auth
 def game():
-    return render_template('Tank.html')
+    return render_template('TankOauth.html')
+
+@app.route("/TankOauth")
+def game2():
+    return render_template('TankOauth.html')
 
 @app.route("/")
-def redic():
-    return redirect('/Login')
-
+def twitterredic():
+    return redirect('/twitter')
 
 @app.route("/Login")
 def login():
     return render_template('Login.html')
-
-@app.route("/LoginHTTP")
-@requiere_auth
-def http():
-    return render_template('Tank.html')
-
 
 
 @app.route("/Logout")
@@ -77,15 +79,14 @@ def info():
 
 
 @app.route("/crearTanque")
-@requiere_auth
 def crearNuevoTanque():
-    global numTanks
-    randX = randint(30, 770)
-    randY = randint(30, 570)
-    numTanks= numTanks +1
-    tank = Tank('Tank'+str(numTanks),randX,randY,direccion())
-    tanques.append(tank)
-    return jsonify(tank.imprimir())
+        global numTanks
+        randX = randint(30, 770)
+        randY = randint(30, 570)
+        numTanks= numTanks +1
+        tank = Tank('Tank'+str(numTanks),randX,randY,direccion())
+        tanques.append(tank)
+        return jsonify(tank.imprimir())
 
 
 def direccion():
@@ -101,9 +102,7 @@ def direccion():
 
 
 @app.route('/brain', methods=['GET'])
-@requiere_auth
 def brain():
-
     for tanque in tanques:
 
         num_aleatorio = randint(1, 5)
@@ -154,7 +153,6 @@ def disparoAleatorio(tank):
     return jsonify(tanque=tank,disparo=num_aleatorio)
 
 @app.route('/actualizaVida', methods=['GET'])
-@requiere_auth
 def vida():
     if request.method == 'GET':
         nombreTanque = request.args.get('tank')
@@ -167,4 +165,4 @@ def vida():
 
 
 if __name__ == '__main__':
-    app.run('0.0.0.0',debug=True)
+    app.run('0.0.0.0',5002,debug=True)

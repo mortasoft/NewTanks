@@ -2,7 +2,7 @@ var juego = new Phaser.Game(800, 600, Phaser.CANVAS, 'tanks');
 
 var tanques = [];
 var ip = "127.0.0.1";
-var port = "5000";
+var port = "5002";
 
 Tanque = function(nombre, x, y, direccion, vida, juego, balaNormal, balaMedia, balaAlta) {
 

@@ -16,22 +16,22 @@
 		<div class="social-box">
 			<div class="row mg-btm">
              <div class="col-md-12">
-                <a href="/LoginHTTP" class="btn btn-primary btn-block">
+                <a href="#" onclick="linkHTTP();"  class="btn btn-primary btn-block">
                   <i class="icon-facebook"></i>    Iniciar session con HTTP
                 </a>
 			</div>
 			</div>
 			<div class="row">
 			<div class="col-md-12">
-                <a href="/LoginToken" class="btn btn-primary btn-block" >
+                <a href="#" onclick="linkToken();" class="btn btn-primary btn-block" >
                   <i class="icon-twitter"></i>    Iniciar session con Token
                 </a>
             </div>
-                <br><br>
+                <p>
           </div>
           <div class="row mg-btm">
              <div class="col-md-12">
-                <a href="/twitter" class="btn btn-info btn-block">
+                <a href="#" onclick="linkOauth();" class="btn btn-info btn-block">
                   <i class="icon-facebook"></i>    Iniciar session con Twitter
                 </a>
       </div>
@@ -43,5 +43,20 @@
 	</div>
 </div>
 
+<script>
+function linkHTTP(){
+window.location = 'http://'+window.location.hostname+':5000'+"/LoginHTTP";
+}
+
+function linkToken(){
+window.location = 'http://'+window.location.hostname+':5001'+"/LoginToken";
+}
+
+function linkOauth(){
+window.location = 'http://'+window.location.hostname+':5002'+"/twitter";
+}
+
+</script>
+
 </body>
-</html>  
+</html>
